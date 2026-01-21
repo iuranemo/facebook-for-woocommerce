@@ -45,7 +45,8 @@ jQuery( document ).ready( ( $ ) => {
 				} );
 
 			this.addInitialSelects( $input.val() );
-			var optionalSelectorID = this.globalsHolder().enhanced_attribute_optional_selector;
+			const globals = this.globalsHolder();
+			var optionalSelectorID = globals.enhanced_attribute_optional_selector;
 
 			if(typeof(optionalSelectorID) !== 'undefined') {
 				// Initial trigger for the optional attributes selector
@@ -57,24 +58,32 @@ jQuery( document ).ready( ( $ ) => {
 		}
 
 		globalsHolder() {
-			if(typeof(facebook_for_woocommerce_product_categories) !== 'undefined'){
-				return facebook_for_woocommerce_product_categories;
-			} else if(typeof(facebook_for_woocommerce_settings_sync) !== 'undefined'){
-				return facebook_for_woocommerce_settings_sync;
-			} else {
-				return facebook_for_woocommerce_products_admin;
+			if ( typeof window.facebook_for_woocommerce_product_categories !== 'undefined' ) {
+				return window.facebook_for_woocommerce_product_categories;
+			} else if ( typeof window.facebook_for_woocommerce_settings_sync !== 'undefined' ) {
+				return window.facebook_for_woocommerce_settings_sync;
+			} else if ( typeof window.facebook_for_woocommerce_products_admin !== 'undefined' ) {
+				return window.facebook_for_woocommerce_products_admin;
 			}
+
+			return {};
 		}
 
 		getPageType(){
-			if(typeof(facebook_for_woocommerce_product_categories) !== 'undefined'){
+			const globals = this.globalsHolder();
+
+			if ( ! globals.enhanced_attribute_page_type_edit_product ) {
+				return null;
+			}
+
+			if ( typeof window.facebook_for_woocommerce_product_categories !== 'undefined' ) {
 				if( $( 'input[name=tag_ID]' ).length === 0){
-					return this.globalsHolder().enhanced_attribute_page_type_add_category;
+					return globals.enhanced_attribute_page_type_add_category;
 				} else {
-					return this.globalsHolder().enhanced_attribute_page_type_edit_category;
+					return globals.enhanced_attribute_page_type_edit_category;
 				}
 			} else {
-				return this.globalsHolder().enhanced_attribute_page_type_edit_product;
+				return globals.enhanced_attribute_page_type_edit_product;
 			}
 		}
 
@@ -123,15 +132,20 @@ jQuery( document ).ready( ( $ ) => {
 			$('.wc-facebook-enhanced-catalog-attribute-row').remove();
 
 			if(this.isValid()) {
+				const globals = this.globalsHolder();
+				if ( ! globals.ajax_url ) {
+					return;
+				}
+
 				var inputSelector = '#' + this.input_id;
 				var $inputParent = $( inputSelector ).parents('div.form-field');
-				var optionalSelectorID = this.globalsHolder().enhanced_attribute_optional_selector;
-				if( this.getPageType() === this.globalsHolder().enhanced_attribute_page_type_edit_category ){
+				var optionalSelectorID = globals.enhanced_attribute_optional_selector;
+				if( this.getPageType() === globals.enhanced_attribute_page_type_edit_category ){
 					$inputParent = $( inputSelector ).parents('tr.form-field');
-				} else if( this.getPageType() === this.globalsHolder().enhanced_attribute_page_type_edit_product ) {
+				} else if( this.getPageType() === globals.enhanced_attribute_page_type_edit_product ) {
 					$inputParent = $( inputSelector ).parents('p.form-field');
 				}
-			  $.get( this.globalsHolder().ajax_url, {
+			  $.get( globals.ajax_url, {
 					action:   'wc_facebook_enhanced_catalog_attributes',
 					security: '',
 					selected_category:  $( inputSelector ).val(),
