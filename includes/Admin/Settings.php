@@ -78,7 +78,9 @@ class Settings {
 		 * If all products sync is not enabled should show the Product sync tab
 		 */
 		if ( true === $is_connected && false === $is_woo_all_products_sync_enbaled ) {
-			$this->screens[ Settings_Screens\Product_Sync::ID ] = new Settings_Screens\Product_Sync();
+			if ( ! isset( $this->screens[ Settings_Screens\Product_Sync::ID ] ) ) {
+				$this->screens[ Settings_Screens\Product_Sync::ID ] = new Settings_Screens\Product_Sync();
+			}
 		}
 	}
 

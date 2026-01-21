@@ -69,7 +69,7 @@ if ( ! class_exists( 'WC_Facebookcommerce_EventsTracker' ) ) :
 		 */
 		public function __construct( $user_info, $aam_settings ) {
 
-			if ( ! $this->is_pixel_enabled() ) {
+			if ( ! $this->is_pixel_enabled() && ! $this->is_capi_enabled() ) {
 				return;
 			}
 
@@ -118,7 +118,7 @@ if ( ! class_exists( 'WC_Facebookcommerce_EventsTracker' ) ) :
 		public function param_builder_server_setup() {
 			try {
 
-				if ( ! (bool) apply_filters( 'facebook_for_woocommerce_integration_pixel_enabled', true ) ) {
+				if ( ! $this->is_pixel_enabled() && ! $this->is_capi_enabled() ) {
 					return;
 				}
 
@@ -169,6 +169,25 @@ if ( ! class_exists( 'WC_Facebookcommerce_EventsTracker' ) ) :
 			}
 
 			return $this->is_pixel_enabled;
+		}
+
+		/**
+		 * Determines whether CAPI (server-side) events should be sent.
+		 *
+		 * @since 3.7.0
+		 *
+		 * @return bool
+		 */
+		private function is_capi_enabled() {
+			$integration = facebook_for_woocommerce()->get_integration();
+			if ( ! $integration || ! $integration->get_facebook_pixel_id() ) {
+				return false;
+			}
+			if ( ! WC_Facebookcommerce_Pixel::get_use_s2s() ) {
+				return false;
+			}
+			$access_token = facebook_for_woocommerce()->get_connection_handler()->get_access_token();
+			return ! empty( $access_token );
 		}
 
 
@@ -259,6 +278,9 @@ if ( ! class_exists( 'WC_Facebookcommerce_EventsTracker' ) ) :
 		public function param_builder_client_setup() {
 			// Client js setup
 			if ( ! facebook_for_woocommerce()->get_connection_handler()->is_connected() ) {
+				return;
+			}
+			if ( ! $this->is_pixel_enabled() && ! $this->is_capi_enabled() ) {
 				return;
 			}
 
@@ -1162,6 +1184,9 @@ if ( ! class_exists( 'WC_Facebookcommerce_EventsTracker' ) ) :
 			$this->tracked_events[] = $event;
 
 			if ( $send_now ) {
+				if ( ! $this->is_capi_enabled() ) {
+					return;
+				}
 				try {
 					facebook_for_woocommerce()->get_api()->send_pixel_events( facebook_for_woocommerce()->get_integration()->get_facebook_pixel_id(), array( $event ) );
 				} catch ( ApiException $exception ) {
